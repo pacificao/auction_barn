@@ -1,7 +1,9 @@
 <?php
 /***************************************************************************
- *   copyright				: (C) 2008 - 2017 WeBid
- *   site					: http://www.webidsupport.com/
+ *   copyright              : (C) 2008 - 2017 WeBid
+ *   site                   : http://www.webidsupport.com/
+ *   Barnealogy             : (C) 2024 Barnealogy, a division of Pacific Animal & Outdoor
+ *   site                   : https://barnealogy.com
  ***************************************************************************/
 
 /***************************************************************************
@@ -30,7 +32,7 @@ class DatabasePDO extends Database
         $this->CHARSET = $CHARSET;
         try {
             // MySQL with PDO_MYSQL
-            $this->conn = new PDO("mysql:host=$DbHost;dbname=$DbDatabase;charset =$CHARSET", $DbUser, $DbPassword);
+            $this->conn = new PDO("mysql:host=$DbHost;dbname=$DbDatabase;charset=$CHARSET", $DbUser, $DbPassword);
             // set error reporting up
             $this->conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
             // actually use prepared statements
@@ -47,108 +49,13 @@ class DatabasePDO extends Database
         $this->error_supress = $state;
     }
 
-    // to run a direct query
-    public function direct_query($query)
+    // to run a direct query with prepared statements for security
+    public function direct_query($query, $params = array())
     {
         try {
-            $this->lastquery = $this->conn->query($query);
-        } catch (PDOException $e) {
-            $this->error_handler($e->getMessage());
-        }
-    }
-
-    // put together the query ready for running
-    /*
-    $query must be given like SELECT * FROM table WHERE this = :that AND where = :here
-    then $params would holds the values for :that and :here, $table would hold the vlue for :table
-    $params = array(
-        array(':that', 'that value', PDO::PARAM_STR),
-        array(':here', 'here value', PDO::PARAM_INT),
-    );
-    last value can be left blank more info http://php.net/manual/en/pdostatement.bindparam.php
-    */
-    public function query($query, $params = array())
-    {
-        try {
-            //$query = $this->build_query($query, $table);
-            $params = $this->build_params($params);
-            $params = $this->clean_params($query, $params);
-            $this->lastquery = $this->conn->prepare($query);
-            //$this->lastquery->bindParam(':table', $this->DBPrefix . $table, PDO::PARAM_STR); // must always be set
-            foreach ($params as $val) {
-                $this->lastquery->bindParam($val[0], $val[1], $val[2]);
-            }
-            $this->lastquery->execute();
-            //$this->lastquery->debugDumpParams();
-        } catch (PDOException $e) {
-            //$this->lastquery->debugDumpParams();
-            $this->error_handler($e->getMessage());
-        }
-
-        //$this->lastquery->rowCount(); // rows affected
-    }
-
-    // put together the query ready for running
-    public function fetch($result = null, $method = 'FETCH_ASSOC')
-    {
-        try {
-            // set fetchquery
-            if ($this->fetchquery == null) {
-                $this->fetchquery = $this->lastquery;
-            }
-            if ($result == null) {
-                $result = $this->fetchquery;
-            }
-            $data = $result->fetch($this->fetch_methods[$method]);
-            // clear fetch query
-            if ($data == false) {
-                $this->fetchquery = null;
-            }
-            return $data;
-        } catch (PDOException $e) {
-            $this->error_handler($e->getMessage());
-        }
-        return null;
-    }
-
-    // put together the query ready for running + get all results
-    public function fetchall($result = null, $method = 'FETCH_ASSOC')
-    {
-        try {
-            if ($result == null) {
-                $result = $this->lastquery;
-            }
-            // set fetchquery
-            return $result->fetchAll($this->fetch_methods[$method]);
-        } catch (PDOException $e) {
-            $this->error_handler($e->getMessage());
-        }
-    }
-
-    public function result($column = null, $result = null, $method = 'FETCH_ASSOC')
-    {
-        if ($result == null) {
-            $result = $this->lastquery;
-        }
-        $data = $result->fetch($this->fetch_methods[$method]);
-        if (empty($column) || $column == null) {
-            return $data;
-        } else {
-            if (isset($data[$column])) {
-                return $data[$column];
-            } else {
-                return false;
-            }
-        }
-    }
-
-    public function numrows($result = null)
-    {
-        try {
-            if ($result == null) {
-                $result = $this->lastquery;
-            }
-            return $result->rowCount();
+            $stmt = $this->conn->prepare($query);
+            $stmt->execute($params);
+            $this->lastquery = $stmt;
         } catch (PDOException $e) {
             $this->error_handler($e->getMessage());
         }
@@ -191,8 +98,7 @@ class DatabasePDO extends Database
         $PDO_constants = array(
             'int' => PDO::PARAM_INT,
             'str' => PDO::PARAM_STR,
-            //'bool' => PDO::PARAM_BOOL, doesn't work, php bug
-            'bool' => PDO::PARAM_INT,
+            'bool' => PDO::PARAM_INT, // work-around PHP bug
             'float' => PDO::PARAM_STR
             );
         // set PDO values to params
@@ -201,7 +107,7 @@ class DatabasePDO extends Database
             if ($params[$i][2] == 'float') {
                 $params[$i][1] = floatval($params[$i][1]);
             }
-            // to fix php bug
+            // fix PHP bug for boolean values
             if ($params[$i][2] == 'bool' && $params[$i][1] > 1) {
                 $params[$i][1] = 1;
             }
@@ -225,3 +131,4 @@ class DatabasePDO extends Database
         $this->conn = null;
     }
 }
+?>
