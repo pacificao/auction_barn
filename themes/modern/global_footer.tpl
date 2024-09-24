@@ -41,7 +41,7 @@
 			"WeBid" linked to www.webidsupport.com. If you must remove thte copyright message pelase make
 			a donation at http://www.webidsupport.com/donate.php to help pay for future developments
 		-->
-		Powered by <a href="http://www.webidsupport.com/">WeBid</a> &copy; 2008 - {L_COPY_YEAR} <a href="http://www.webidsupport.com/">WeBid</a>
+		Powered by <a href="https://barnealogy.com/">Barnealogy</a> &copy; 2023 - {L_COPY_YEAR} <a href="https://auction.barnealogy.com/">Barnealogy Auction Barn</a>
 	</div>
 </div>
 <script src="{SITEURL}js/jquery.lightbox.js"></script>
